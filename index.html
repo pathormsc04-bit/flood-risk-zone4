@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ศูนย์เฝ้าระวังภัยน้ำท่วม Lab & รังสีวิทยา เขตสุขภาพที่ 4</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Leaflet Map & Heatmap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <style>
+        body { background-color: #0b1329; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-modal { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); }
+        #map { height: 100%; width: 100%; border-radius: 1rem; z-index: 10; }
+        .leaflet-container { background: #0f172a !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-4 gap-4 overflow-hidden select-none">
+
+    <!-- HEADER & KPI -->
+    <header class="glass-card rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-2xl">
+        <div class="flex items-center gap-3">
+            <div class="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400">
+                <i data-lucide="shield-alert" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-lg font-bold text-white tracking-wide">ศูนย์เฝ้าระวังภัยน้ำท่วม ห้องปฏิบัติการและงานรังสีวิทยา</h1>
+                    <span class="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">ศวก.4 / เขต 4</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    GIS Heatmap Real-time Synchronization
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+            <a href="form.html" target="_blank" class="bg-sky-600 hover:bg-sky-500 font-bold text-white px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-600/30 flex items-center gap-2 text-xs">
+                <i data-lucide="edit-3" class="w-4 h-4"></i> เปิดหน้ากรอกรายงาน
+            </a>
+            <div class="glass-card px-4 py-2 rounded-xl border-l-4 border-emerald-500 text-center w-20">
+                <span class="text-[10px] text-slate-400 block font-medium">🟢 ปกติ</span>
+                <span id="kpi-green" class="text-lg font-black text-emerald-400">0</span>
+            </div>
+            <div class="glass-card px-4 py-2 rounded-xl border-l-4 border-amber-500 text-center w-20">
+                <span class="text-[10px] text-slate-400 block font-medium">🟡 เตือนภัย</span>
+                <span id="kpi-yellow" class="text-lg font-black text-amber-400">0</span>
+            </div>
+            <div class="glass-card px-4 py-2 rounded-xl border-l-4 border-rose-500 text-center w-20">
+                <span class="text-[10px] text-slate-400 block font-medium">🔴 วิกฤต</span>
+                <span id="kpi-red" class="text-lg font-black text-rose-400">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CANVAS -->
+    <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
+        <!-- HEATMAP MAP (7 Cols) -->
+        <main class="col-span-12 lg:col-span-7 glass-card rounded-2xl p-3 flex flex-col min-h-0 shadow-xl relative">
+            <div class="flex justify-between items-center mb-2 px-1">
+                <h2 class="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-2">
+                    <i data-lucide="map" class="w-4 h-4 text-sky-400"></i> แผนที่แสดงกระจุกความเสี่ยง (GIS Heatmap รายอำเภอ)
+                </h2>
+                <span class="text-[10px] text-sky-400 font-semibold flex items-center gap-1">
+                    <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i> Real-time
+                </span>
+            </div>
+            <div class="flex-1 rounded-xl overflow-hidden relative">
+                <div id="map"></div>
+            </div>
+        </main>
+
+        <!-- HOSPITAL CARDS (5 Cols) -->
+        <section class="col-span-12 lg:col-span-5 glass-card rounded-2xl p-4 flex flex-col min-h-0 shadow-xl">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-2">
+                    <i data-lucide="layout-grid" class="w-4 h-4 text-sky-400"></i> รายงานสถานะล่าสุด
+                </h2>
+                <span class="text-[10px] text-slate-400">คลิกดูแผนปฏิบัติการ (SOP)</span>
+            </div>
+            <div id="hospital-cards-container" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
+        </section>
+    </div>
+
+    <!-- SOP MODAL -->
+    <div id="sop-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="glass-modal rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 id="modal-hospital-name" class="text-lg font-bold text-white">รพ.</h3>
+                        <span id="modal-risk-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full">🟢 ปกติ</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">แนวทางปฏิบัติตามระดับความเสี่ยง (Action Checklist)</p>
+                </div>
+                <button onclick="closeSopModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-3 text-xs overflow-y-auto max-h-[50vh] pr-1">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-sky-400 mb-1">🏥 ระดับอำเภอ (รพ. หน้างาน)</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-300">
+                        <li>ตัดระบบไฟหลักเครื่องมือรังสี (CT/X-Ray) เมื่อเสี่ยงท่วม</li>
+                        <li>ย้ายบริการ Lab ฉุกเฉินไปชั้น 2</li>
+                        <li>เตรียมส่งต่อ Specimen เลือดไป รพ. โหนดรับ</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-amber-400 mb-1">🏛️ ระดับจังหวัด (สสจ. / รพ.ศูนย์)</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-300">
+                        <li>เปิดศูนย์รับส่งต่อวิกฤต (Referral Hub)</li>
+                        <li>จัดทีมพยาธิฯ/รังสีฯ สนับสนุนกรณีขาดแคลน</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-purple-400 mb-1">🛡️ ระดับเขต (ศูนย์วิทยาศาสตร์การแพทย์ที่ 4)</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-300">
+                        <li>จัดสรรงบ/ทรัพยากรฉุกเฉินระดับเขต</li>
+                        <li>รับตรวจ Specimen เกินศักยภาพจังหวัด ณ ศวก.4 สระบุรี</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-2 text-right border-t border-slate-800">
+                <button onclick="closeSopModal()" class="bg-slate-800 text-white font-semibold px-4 py-2 rounded-xl text-xs">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 📌 CONFIG SUPABASE (ใส่ URL และ ANON KEY ของคุณ)
+        const SUPABASE_URL = "https://YOUR_SUPABASE_PROJECT_ID.supabase.co";
+        const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 📌 ฐานข้อมูลพิกัดรายอำเภอในเขต 4
+        const districtCoords = {
+            "เสาไห้": { lat: 14.5528, lng: 100.8642 },
+            "เมืองสระบุรี": { lat: 14.5289, lng: 100.9108 },
+            "พระพุทธบาท": { lat: 14.7236, lng: 100.7958 },
+            "แก่งคอย": { lat: 14.5864, lng: 101.0028 },
+            "มวกเหล็ก": { lat: 14.6547, lng: 101.1983 },
+            "บ้านหมอ": { lat: 14.6136, lng: 100.7225 },
+            "ดอนพุด": { lat: 14.6111, lng: 100.6125 },
+            "หนองแค": { lat: 14.3422, lng: 100.8686 },
+            "ป่าโมก": { lat: 14.4822, lng: 100.4489 },
+            "เมืองอ่างทอง": { lat: 14.5896, lng: 100.4550 },
+            "ไชโย": { lat: 14.6467, lng: 100.4853 },
+            "วิเศษชัยชาญ": { lat: 14.5958, lng: 100.3347 },
+            "พระนครศรีอยุธยา": { lat: 14.3532, lng: 100.5684 },
+            "บางปะอิน": { lat: 14.2289, lng: 100.5786 },
+            "เสนา": { lat: 14.3236, lng: 100.4042 },
+            "ผักไห่": { lat: 14.4561, lng: 100.3703 },
+            "บางบาล": { lat: 14.3811, lng: 100.4739 },
+            "มหาราช": { lat: 14.5333, lng: 100.5283 },
+            "เมืองสิงห์บุรี": { lat: 14.8906, lng: 100.3982 },
+            "อินทร์บุรี": { lat: 15.0069, lng: 100.3242 },
+            "พรหมบุรี": { lat: 14.7661, lng: 100.4564 },
+            "ค่ายบางระจัน": { lat: 14.8058, lng: 100.3150 },
+            "เมืองลพบุรี": { lat: 14.7995, lng: 100.6534 },
+            "เมืองชัยนาท": { lat: 15.1851, lng: 100.1251 },
+            "เมืองนนทบุรี": { lat: 13.8591, lng: 100.5217 },
+            "เมืองปทุมธานี": { lat: 14.0208, lng: 100.5250 }
+        };
+
+        const provinceCoords = {
+            "สระบุรี": { lat: 14.5289, lng: 100.9108 },
+            "พระนครศรีอยุธยา": { lat: 14.3532, lng: 100.5684 },
+            "อ่างทอง": { lat: 14.5896, lng: 100.4550 },
+            "สิงห์บุรี": { lat: 14.8906, lng: 100.3982 },
+            "ลพบุรี": { lat: 14.7995, lng: 100.6534 },
+            "ชัยนาท": { lat: 15.1851, lng: 100.1251 },
+            "นนทบุรี": { lat: 13.8591, lng: 100.5217 },
+            "ปทุมธานี": { lat: 14.0208, lng: 100.5250 }
+        };
+
+        // Init Leaflet Map
+        const map = L.map('map').setView([14.5289, 100.9108], 9);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
+
+        let heatLayer = null;
+        let markersGroup = L.layerGroup().addTo(map);
+
+        async function loadAndRenderData() {
+            const { data, error } = await supabase.from('hospital_risks').select('*').order('created_at', { ascending: false });
+            if (error) return;
+
+            markersGroup.clearLayers();
+            if (heatLayer) map.removeLayer(heatLayer);
+
+            const container = document.getElementById('hospital-cards-container');
+            container.innerHTML = '';
+
+            let greenCount = 0, yellowCount = 0, redCount = 0;
+            const heatData = [];
+
+            data.forEach(item => {
+                if (item.risk_level === 'RED') redCount++;
+                else if (item.risk_level === 'YELLOW') yellowCount++;
+                else greenCount++;
+
+                const coords = districtCoords[item.district] || provinceCoords[item.province] || { lat: 14.5289, lng: 100.9108 };
+                const intensity = item.risk_level === 'RED' ? 1.0 : item.risk_level === 'YELLOW' ? 0.6 : 0.2;
+                heatData.push([coords.lat, coords.lng, intensity * 2]);
+
+                const color = item.risk_level === 'RED' ? '#ef4444' : item.risk_level === 'YELLOW' ? '#f59e0b' : '#10b981';
+                L.circleMarker([coords.lat, coords.lng], {
+                    radius: 8, fillColor: color, color: '#ffffff', weight: 2, fillOpacity: 0.9
+                }).bindPopup(`<strong style="color:#0f172a">${item.hospital_name}</strong><br><span style="color:#475569">อ.${item.district} จ.${item.province}</span>`).addTo(markersGroup);
+
+                const badge = item.risk_level === 'RED' ? '🔴 วิกฤต' : item.risk_level === 'YELLOW' ? '🟡 เตือนภัย' : '🟢 ปกติ';
+                const cardBorder = item.risk_level === 'RED' ? 'border-rose-500/40 bg-rose-950/20' : item.risk_level === 'YELLOW' ? 'border-amber-500/40 bg-amber-950/20' : 'border-emerald-500/30 bg-emerald-950/10';
+
+                container.innerHTML += `
+                    <div onclick="openSopModal('${item.hospital_name}', '${item.risk_level}')" class="glass-card p-3 rounded-xl border ${cardBorder} hover:border-sky-400 transition-all cursor-pointer flex justify-between items-center group">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-white text-xs group-hover:text-sky-300">${item.hospital_name}</h3>
+                                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 border border-slate-700">${badge}</span>
+                            </div>
+                            <p class="text-[10px] text-slate-300 mt-1 line-clamp-1">อ.${item.district} จ.${item.province} - ${item.water_situation || 'ไม่มีรายงาน'}</p>
+                            <div class="text-[9px] text-slate-500 mt-1">ผู้รายงาน: ${item.reporter_name || 'ไม่ระบุ'} (${new Date(item.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} น.)</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-white"></i>
+                    </div>
+                `;
+            });
+
+            if (heatData.length > 0) {
+                heatLayer = L.heatLayer(heatData, { radius: 35, blur: 20, maxZoom: 12, gradient: { 0.2: '#10b981', 0.6: '#f59e0b', 1.0: '#ef4444' } }).addTo(map);
+            }
+
+            document.getElementById('kpi-green').innerText = greenCount;
+            document.getElementById('kpi-yellow').innerText = yellowCount;
+            document.getElementById('kpi-red').innerText = redCount;
+            lucide.createIcons();
+        }
+
+        // Realtime Subscription
+        supabase.channel('public:hospital_risks')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_risks' }, loadAndRenderData)
+            .subscribe();
+
+        loadAndRenderData();
+
+        function openSopModal(name, status) {
+            document.getElementById('modal-hospital-name').innerText = name;
+            const badge = document.getElementById('modal-risk-badge');
+            if(status === 'RED') { badge.innerText = '🔴 วิกฤต'; badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/50'; }
+            else if(status === 'YELLOW') { badge.innerText = '🟡 เตือนภัย'; badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50'; }
+            else { badge.innerText = '🟢 ปกติ'; badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'; }
+            document.getElementById('sop-modal').classList.remove('hidden');
+        }
+        function closeSopModal() { document.getElementById('sop-modal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
