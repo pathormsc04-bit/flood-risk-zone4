@@ -4,41 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แบบรายงานสถานการณ์น้ำท่วม Lab & รังสี เขต 4</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
-        .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        * { font-family: 'Prompt', sans-serif; }
+        body { 
+            background: radial-gradient(circle at top left, #0f172a, #090d16); 
+            color: #f8fafc; 
+        }
+        .glass-panel { 
+            background: rgba(15, 23, 42, 0.85); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+        .input-style {
+            background-color: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+        .input-style:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+            outline: none;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 flex justify-center items-center">
 
-    <main class="w-full max-w-lg glass-card rounded-2xl p-5 shadow-2xl space-y-5 my-4">
-        <div class="border-b border-slate-700/80 pb-4 text-center">
-            <div class="inline-flex p-3 bg-sky-500/10 border border-sky-500/30 rounded-full text-sky-400 mb-2">
-                <i data-lucide="clipboard-check" class="w-8 h-8"></i>
+    <main class="w-full max-w-lg glass-panel rounded-2xl p-6 shadow-2xl space-y-5 my-4 border border-slate-800">
+        
+        <!-- HEADER -->
+        <div class="border-b border-slate-800 pb-4 text-center">
+            <div class="inline-flex p-3.5 bg-gradient-to-br from-sky-500/20 to-blue-600/10 border border-sky-500/30 rounded-2xl text-sky-400 mb-3 shadow-lg shadow-sky-500/10">
+                <i data-lucide="clipboard-check" class="w-7 h-7"></i>
             </div>
-            <h1 class="text-base font-bold text-white">แบบรายงานสถานการณ์ความเสี่ยงน้ำท่วม</h1>
-            <p class="text-xs text-slate-400 mt-1">งานห้องปฏิบัติการพยาธิวิทยา & รังสีวิทยา (เขตสุขภาพที่ 4)</p>
+            <h1 class="text-lg font-bold text-white tracking-wide">แบบรายงานสถานการณ์ความเสี่ยงน้ำท่วม</h1>
+            <p class="text-xs text-slate-400 mt-1 font-light">งานห้องปฏิบัติการพยาธิวิทยา & รังสีวิทยา (เขตสุขภาพที่ 4)</p>
         </div>
 
-        <form id="report-form" class="space-y-4 text-xs">
+        <!-- FORM -->
+        <form id="report-form" class="space-y-4 text-xs font-light">
+            
+            <!-- SECTION 1: LOCATION -->
             <div class="space-y-3">
-                <label class="block font-bold text-slate-300 flex items-center gap-1.5">
-                    <i data-lucide="building-2" class="w-4 h-4 text-sky-400"></i> 1. ข้อมูลสถานที่ / หน่วยงาน
+                <label class="block font-medium text-slate-200 flex items-center gap-2 text-xs">
+                    <i data-lucide="building-2" class="w-4 h-4 text-sky-400"></i>
+                    <span>1. ข้อมูลสถานที่ / หน่วยงาน</span>
                 </label>
                 <div>
                     <label class="block text-slate-400 mb-1">ชื่อโรงพยาบาล / หน่วยงาน</label>
-                    <input type="text" id="hospital_name" required placeholder="เช่น รพ.เสาไห้ หรือ รพ.สต.บ้านหมอ" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-sky-500 font-semibold">
+                    <input type="text" id="hospital_name" required placeholder="เช่น รพ.เสาไห้ หรือ รพ.สต.บ้านหมอ" class="w-full input-style rounded-xl p-3 text-white placeholder:text-slate-600 text-xs font-normal">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-slate-400 mb-1">จังหวัด (เขต 4)</label>
-                        <select id="province" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-sky-500">
+                        <select id="province" required class="w-full input-style rounded-xl p-3 text-white text-xs font-normal">
                             <option value="สระบุรี">สระบุรี</option>
                             <option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option>
                             <option value="อ่างทอง">อ่างทอง</option>
@@ -51,71 +82,81 @@
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1">อำเภอ</label>
-                        <input type="text" id="district" required placeholder="เช่น เสาไห้, เมืองสระบุรี" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-sky-500">
+                        <input type="text" id="district" required placeholder="เช่น เสาไห้, เมืองสระบุรี" class="w-full input-style rounded-xl p-3 text-white placeholder:text-slate-600 text-xs font-normal">
                     </div>
                 </div>
             </div>
 
-            <div class="pt-2 border-t border-slate-800">
-                <label class="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <i data-lucide="shield-alert" class="w-4 h-4 text-sky-400"></i> 2. ประเมินระดับความเสี่ยงภาพรวม
+            <!-- SECTION 2: RISK LEVEL -->
+            <div class="pt-3 border-t border-slate-800">
+                <label class="block font-medium text-slate-200 mb-2 flex items-center gap-2 text-xs">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-sky-400"></i>
+                    <span>2. ประเมินระดับความเสี่ยงภาพรวม</span>
                 </label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="border border-slate-700 bg-slate-900 p-2.5 rounded-xl text-center cursor-pointer hover:border-emerald-500 flex flex-col items-center gap-1">
+                <div class="grid grid-cols-3 gap-2.5">
+                    <label class="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-center cursor-pointer hover:border-emerald-500/50 flex flex-col items-center gap-1.5 transition-all">
                         <input type="radio" name="risk_level" value="GREEN" checked class="accent-emerald-500">
-                        <span class="font-bold text-emerald-400">🟢 ปกติ</span>
+                        <span class="font-medium text-emerald-400 text-xs">🟢 ปกติ</span>
                     </label>
-                    <label class="border border-slate-700 bg-slate-900 p-2.5 rounded-xl text-center cursor-pointer hover:border-amber-500 flex flex-col items-center gap-1">
+                    <label class="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-center cursor-pointer hover:border-amber-500/50 flex flex-col items-center gap-1.5 transition-all">
                         <input type="radio" name="risk_level" value="YELLOW" class="accent-amber-500">
-                        <span class="font-bold text-amber-400">🟡 เตือนภัย</span>
+                        <span class="font-medium text-amber-400 text-xs">🟡 เตือนภัย</span>
                     </label>
-                    <label class="border border-slate-700 bg-slate-900 p-2.5 rounded-xl text-center cursor-pointer hover:border-rose-500 flex flex-col items-center gap-1">
+                    <label class="border border-slate-800 bg-slate-900/60 p-3 rounded-xl text-center cursor-pointer hover:border-rose-500/50 flex flex-col items-center gap-1.5 transition-all">
                         <input type="radio" name="risk_level" value="RED" class="accent-rose-500">
-                        <span class="font-bold text-rose-400">🔴 วิกฤต</span>
+                        <span class="font-medium text-rose-400 text-xs">🔴 วิกฤต</span>
                     </label>
                 </div>
             </div>
 
-            <div class="space-y-2 pt-2 border-t border-slate-800">
-                <label class="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <i data-lucide="list-checks" class="w-4 h-4 text-sky-400"></i> 3. รายการตรวจสอบความพร้อม (Checklist)
+            <!-- SECTION 3: CHECKLIST -->
+            <div class="space-y-2 pt-3 border-t border-slate-800">
+                <label class="block font-medium text-slate-200 mb-2 flex items-center gap-2 text-xs">
+                    <i data-lucide="list-checks" class="w-4 h-4 text-sky-400"></i>
+                    <span>3. รายการตรวจสอบความพร้อม (Checklist)</span>
                 </label>
-                <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <label class="flex items-center gap-2 cursor-pointer">
+                <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/80 space-y-2.5">
+                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
                         <input type="checkbox" id="chk_water" class="w-4 h-4 rounded accent-sky-500">
-                        <span class="text-slate-300">น้ำท่วมขังหรือเอ่อล้นบริเวณรอบอาคาร</span>
+                        <span>น้ำท่วมขังหรือเอ่อล้นบริเวณรอบอาคาร</span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
+                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
                         <input type="checkbox" id="chk_power" class="w-4 h-4 rounded accent-sky-500">
-                        <span class="text-slate-300">ตัดระบบไฟฟ้าหลัก / ใช้ไฟสำรอง</span>
+                        <span>ตัดระบบไฟฟ้าหลัก / ใช้ไฟสำรอง (Generator)</span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
+                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
                         <input type="checkbox" id="chk_lab_move" class="w-4 h-4 rounded accent-sky-500">
-                        <span class="text-slate-300">ยกเครื่องมือ Lab / สำรองน้ำยาขึ้นชั้นสูงแล้ว</span>
+                        <span>ยกเครื่องมือ Lab / สำรองน้ำยาขึ้นชั้นสูงแล้ว</span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
+                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
                         <input type="checkbox" id="chk_rad_stop" class="w-4 h-4 rounded accent-sky-500">
-                        <span class="text-slate-300">งดให้บริการเครื่อง X-Ray/CT (ตัดไฟคลุมพลาสติก)</span>
+                        <span>งดให้บริการเครื่อง X-Ray/CT (ตัดไฟคลุมพลาสติก)</span>
                     </label>
                 </div>
             </div>
 
-            <div class="pt-2 border-t border-slate-800">
-                <label class="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <i data-lucide="message-square" class="w-4 h-4 text-sky-400"></i> 4. รายละเอียดสถานการณ์เพิ่มเติม
+            <!-- SECTION 4: ADDITIONAL DETAILS -->
+            <div class="pt-3 border-t border-slate-800">
+                <label class="block font-medium text-slate-200 mb-1.5 flex items-center gap-2 text-xs">
+                    <i data-lucide="message-square" class="w-4 h-4 text-sky-400"></i>
+                    <span>4. รายละเอียดสถานการณ์เพิ่มเติม</span>
                 </label>
-                <textarea id="water_situation" rows="2" placeholder="ระบุระดับน้ำ หรือสิ่งที่ต้องการความช่วยเหลือ..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-sky-500"></textarea>
+                <textarea id="water_situation" rows="2" placeholder="ระบุระดับน้ำ หรือสิ่งที่ต้องการความช่วยเหลือฉุกเฉิน..." class="w-full input-style rounded-xl p-3 text-white placeholder:text-slate-600 text-xs font-normal"></textarea>
             </div>
 
-            <div>
-                <label class="block font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <i data-lucide="user" class="w-4 h-4 text-sky-400"></i> 5. ชื่อผู้รายงาน & เบอร์ติดต่อ
+            <!-- SECTION 5: REPORTER INFO -->
+            <div class="pt-3 border-t border-slate-800">
+                <label class="block font-medium text-slate-200 mb-1.5 flex items-center gap-2 text-xs">
+                    <i data-lucide="user" class="w-4 h-4 text-sky-400"></i>
+                    <span>5. ชื่อผู้รายงาน & เบอร์ติดต่อ</span>
                 </label>
-                <input type="text" id="reporter_name" required placeholder="เช่น ทนพ. กฤษณ์ธนะวัจน์ (เบอร์ 096-170-7533)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-sky-500">
+                <input type="text" id="reporter_name" required placeholder="เช่น ทนพ. กฤษณ์ธนะวัจน์ (เบอร์ 096-170-7533)" class="w-full input-style rounded-xl p-3 text-white placeholder:text-slate-600 text-xs font-normal">
             </div>
 
-            <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 font-bold text-white py-3.5 rounded-xl transition-all shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 text-sm mt-4">
-                <i data-lucide="send" class="w-4 h-4"></i> ส่งรายงานเข้า Dashboard หลัก
+            <!-- SUBMIT BUTTON -->
+            <button type="submit" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-medium py-3.5 rounded-xl transition-all shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2 text-xs mt-5 hover:scale-[1.01] active:scale-[0.99]">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>ส่งรายงานเข้า Dashboard หลัก</span>
             </button>
         </form>
     </main>
@@ -123,7 +164,7 @@
     <script>
         lucide.createIcons();
 
-        // 📌 CONFIG SUPABASE (ใส่รหัสของคุณเรียบร้อยแล้ว)
+        // CONFIG SUPABASE
         const SUPABASE_URL = "https://ryndphzwqomywcnblepe.supabase.co";
         const SUPABASE_KEY = "sb_publishable_EuCe7tghxwTC3t6f2T5rOA_QUGOx-e3";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
